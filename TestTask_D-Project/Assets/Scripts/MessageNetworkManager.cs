@@ -1,35 +1,92 @@
+using System;
+using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 
 public class MessageNetworkManager : NetworkManager
 {
+    private readonly HashSet<NetworkConnectionToClient> _subscribers = new();
+
     private readonly HelloMessage _message = new()
     {
         Text = "Hello Client!"
     };
 
+    public void SendHelloMessageToSubscribers()
+    {
+        //
+        if (!NetworkServer.active) return;
+        
+        var subscribersCopy = new List<NetworkConnectionToClient>(_subscribers);
+        foreach (var connectionToClient in subscribersCopy)
+        {
+            // 
+            if (connectionToClient != null && connectionToClient.isReady)
+            {
+                connectionToClient.Send(_message);
+            }
+        }
+    }
+
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        
+        Debug.Log("OnStartServer");
+        
+        NetworkServer.RegisterHandler<SubscribeMessage>(OnSubscribeMessageReceived);
+    }
+
+    public override void OnStopServer()
+    {
+        Debug.Log("OnStopServer");
+        
+        _subscribers.Clear();
+        NetworkServer.UnregisterHandler<SubscribeMessage>();
+        
+        base.OnStopServer();
+    }
+
     public override void OnStartClient()
     {
-        Debug.Log("OnStartClient");
         base.OnStartClient();
-        NetworkClient.RegisterHandler<HelloMessage>(OnHelloMessageReceived);
+        
+        Debug.Log("OnStartClient");
+        
+        //NetworkClient.RegisterHandler<HelloMessage>(OnHelloMessageReceived);
     }
 
     public override void OnStopClient()
     {
-        Debug.Log("OnStopClient");
         base.OnStopClient();
-        NetworkClient.UnregisterHandler<HelloMessage>();
+        
+        Debug.Log("OnStopClient");
+        
+        //NetworkClient.UnregisterHandler<HelloMessage>();
     }
 
-    public override void OnServerAddPlayer(NetworkConnectionToClient conn)
+    public override void OnServerDisconnect(NetworkConnectionToClient connectionToClient)
     {
-        base.OnServerAddPlayer(conn);
-        conn.Send(_message);
+        _subscribers.Remove(connectionToClient);
+        base.OnServerDisconnect(connectionToClient);
     }
 
-    private void OnHelloMessageReceived(HelloMessage message)
+    private void OnSubscribeMessageReceived(NetworkConnectionToClient connectionToClient, SubscribeMessage message)
     {
-        Debug.Log($"CLIENT GET MESSAGE FROM SERVER: '{message.Text}'");
+        if (message.IsSubscribe)
+        {
+            Debug.Log("Subscribe Client");
+            _subscribers.Add(connectionToClient);
+        }
+        else
+        {
+            Debug.Log("Unsubscribe Client");
+            _subscribers.Remove(connectionToClient);
+        }
     }
+
+    // private void OnHelloMessageReceived(HelloMessage message)
+    // {
+    //     Debug.Log(message.Text);
+    // }
 }
