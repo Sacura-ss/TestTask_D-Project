@@ -105,6 +105,6 @@ InitTestScene*.unity*
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
 
-# ParrelSync clone folders
-*_clone_*/
-*_clone_*
+# IntelliJ IDEA
+.idea/
+
