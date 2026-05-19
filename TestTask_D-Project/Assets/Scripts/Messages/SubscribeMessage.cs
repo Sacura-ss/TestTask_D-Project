@@ -1,6 +1,10 @@
 using Mirror;
 
-public struct SubscribeMessage : NetworkMessage
+namespace Messages
 {
-    public bool IsSubscribe;
+    public struct SubscribeMessage : NetworkMessage
+    {
+        public string MessageType;
+        public bool IsSubscribe;
+    }
 }

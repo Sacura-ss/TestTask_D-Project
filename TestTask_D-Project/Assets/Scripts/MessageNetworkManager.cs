@@ -1,73 +1,35 @@
-using System;
-using System.Collections.Generic;
+using Messages;
 using Mirror;
 using UnityEngine;
+using Zenject;
 
 public class MessageNetworkManager : NetworkManager
 {
-    private readonly HashSet<NetworkConnectionToClient> _subscribers = new();
+    private SubscribeManager _subscribeManager;
 
-    private readonly HelloMessage _message = new()
+    [Inject]
+    private void Construct(SubscribeManager subscribeManager)
     {
-        Text = "Hello Client!"
-    };
-
-    public void SendHelloMessageToSubscribers()
-    {
-        //
-        if (!NetworkServer.active) return;
-        
-        var subscribersCopy = new List<NetworkConnectionToClient>(_subscribers);
-        foreach (var connectionToClient in subscribersCopy)
-        {
-            // 
-            if (connectionToClient != null && connectionToClient.isReady)
-            {
-                connectionToClient.Send(_message);
-            }
-        }
+        _subscribeManager = subscribeManager;
     }
 
     public override void OnStartServer()
     {
         base.OnStartServer();
         
-        Debug.Log("OnStartServer");
-        
         NetworkServer.RegisterHandler<SubscribeMessage>(OnSubscribeMessageReceived);
     }
 
     public override void OnStopServer()
     {
-        Debug.Log("OnStopServer");
-        
-        _subscribers.Clear();
         NetworkServer.UnregisterHandler<SubscribeMessage>();
-        
+
         base.OnStopServer();
-    }
-
-    public override void OnStartClient()
-    {
-        base.OnStartClient();
-        
-        Debug.Log("OnStartClient");
-        
-        //NetworkClient.RegisterHandler<HelloMessage>(OnHelloMessageReceived);
-    }
-
-    public override void OnStopClient()
-    {
-        base.OnStopClient();
-        
-        Debug.Log("OnStopClient");
-        
-        //NetworkClient.UnregisterHandler<HelloMessage>();
     }
 
     public override void OnServerDisconnect(NetworkConnectionToClient connectionToClient)
     {
-        _subscribers.Remove(connectionToClient);
+        _subscribeManager.UnsubscribeAll(connectionToClient);
         base.OnServerDisconnect(connectionToClient);
     }
 
@@ -76,17 +38,21 @@ public class MessageNetworkManager : NetworkManager
         if (message.IsSubscribe)
         {
             Debug.Log("Subscribe Client");
-            _subscribers.Add(connectionToClient);
+
+            _subscribeManager.Subscribe(message.MessageType, connectionToClient);
         }
         else
         {
             Debug.Log("Unsubscribe Client");
-            _subscribers.Remove(connectionToClient);
+
+            _subscribeManager.Unsubscribe(message.MessageType, connectionToClient);
         }
     }
+    
+    public void SendHelloMessageToSubscribers<T>(T message) where T : struct, NetworkMessage
+    {
+        if (!NetworkServer.active) return;
 
-    // private void OnHelloMessageReceived(HelloMessage message)
-    // {
-    //     Debug.Log(message.Text);
-    // }
+        _subscribeManager.SendToSubscribers(message);
+    }
 }

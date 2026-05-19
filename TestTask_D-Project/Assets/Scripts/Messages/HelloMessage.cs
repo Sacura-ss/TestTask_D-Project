@@ -1,6 +1,9 @@
 using Mirror;
 
-public struct HelloMessage : NetworkMessage
+namespace Messages
 {
-    public string Text;
+    public struct HelloMessage : NetworkMessage
+    {
+        public string Text;
+    }
 }
