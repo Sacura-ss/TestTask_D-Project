@@ -3,9 +3,12 @@ using Mirror;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Zenject;
 
 public class UiHandler : NetworkBehaviour
 {
+    private MessageNetworkManager _networkManager;
+    
     [Header("Client Panel")] [SerializeField]
     private GameObject _clientPanelObject;
 
@@ -20,8 +23,11 @@ public class UiHandler : NetworkBehaviour
     [Header("Common Panel")] [SerializeField]
     private TMP_Text _log;
 
-    [Header("NetworkManager")] [SerializeField]
-    private MessageNetworkManager _networkManager;
+    [Inject]
+    private void Construct(MessageNetworkManager networkManager)
+    {
+        _networkManager = networkManager;
+    }
 
     private void Awake()
     {
