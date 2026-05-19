@@ -8,20 +8,6 @@ public class MessageNetworkManager : NetworkManager
         Text = "Hello Client!"
     };
 
-    public override void OnStartServer()
-    {
-        Debug.Log("OnStartServer");
-        base.OnStartServer();
-        NetworkServer.OnConnectedEvent += OnClientConnected;
-    }
-
-    public override void OnStopServer()
-    {
-        Debug.Log("OnStopServer");
-        base.OnStopServer();
-        NetworkServer.OnConnectedEvent -= OnClientConnected;
-    }
-
     public override void OnStartClient()
     {
         Debug.Log("OnStartClient");
@@ -36,9 +22,10 @@ public class MessageNetworkManager : NetworkManager
         NetworkClient.UnregisterHandler<HelloMessage>();
     }
 
-    private void OnClientConnected(NetworkConnectionToClient connectionToClient)
+    public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-        connectionToClient.Send(_message);
+        base.OnServerAddPlayer(conn);
+        conn.Send(_message);
     }
 
     private void OnHelloMessageReceived(HelloMessage message)
